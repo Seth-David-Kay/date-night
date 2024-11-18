@@ -1,0 +1,32 @@
+* {
+  font-family: 'Pacifico';
+  font-weight: bold;
+}
+#videoPlayer {
+  width: 100%;
+  height: 100vh; /* vh stands for viewport height, which is the height of the user's visible area of a web page */
+  object-fit: contain; /* This makes sure the aspect ratio of the video is maintained */
+}
+.home-body{
+	background-color: rgb(87, 98, 110);
+}
+.topnav{
+	background-color: grey;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 25px;
+}
+.topnav a{
+	color: lightgrey;
+	text-align: center;
+	padding: 14px 16px;
+	text-decoration: none;
+	font-size: 17px;
+	border-radius: 25px;
+}
+/* Color of links on hover */
+.topnav a:hover{
+	background-color: lightslategrey;
+	color: rgb(87, 98, 110);
+}

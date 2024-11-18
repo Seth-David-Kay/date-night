@@ -1,0 +1,115 @@
+// TODO: make the reset and set and sync automatic by having a boolean
+// in the database that is set to true when the reset or sync button is clicked
+
+import { database } from './firebaseConfig.js';
+import { update, get, ref, set, onValue } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
+
+const videoPlayer = document.getElementById('videoPlayer');
+const fileInput = document.getElementById('fileInput');
+const syncStatus = document.getElementById('syncStatus');
+
+// Handle file selection
+fileInput.addEventListener('change', (event) => {
+  const file = event.target.files[0];  // Get the selected file
+
+  if (file) {
+    const fileURL = URL.createObjectURL(file);  // Convert the file to a URL
+    videoPlayer.src = fileURL;  // Set the video source to the file URL
+    videoPlayer.load();  // Load the video into the player
+    syncStatus.textContent = `Loaded file: ${file.name}`;  // Display the loaded file name
+    console.log(`Loaded file: ${file.name}`);  // Debugging: Log the loaded file name
+  } else {
+    syncStatus.textContent = `No file selected`;
+    console.log("No file selected");  // Debugging: Log if no file was selected
+  }
+});
+
+// Watch for changes to the 'reset' database variables, if set to true, reset the video player and database
+const resetRef = ref(database, 'reset');
+onValue(resetRef, (snapshot) => {
+  const data = snapshot.val();
+  if (data.reset) {
+    resetButton.click();
+    console.log('Reset video player and database');
+  }
+});
+
+// Watch for changes to the 'sync' database variables, if set to true, sync the video player with the database
+const syncRef = ref(database, 'sync');
+onValue(syncRef, (snapshot) => {
+  const data = snapshot.val();
+  if (data.sync) {
+    syncButton.click();
+    console.log('Synced video player with database');
+  }
+});
+
+// Display to console when the database content changes
+const updateDatabaseContent = () => {
+  const playbackRef = ref(database, 'playback');
+  onValue(playbackRef, (snapshot) => {
+    const data = snapshot.val();
+    // On a change, change the playback so that it matches the database
+    if (data.playing) {
+      videoPlayer.play();
+    }
+    else {
+      videoPlayer.pause();
+    }
+  });
+};
+
+// Make a reset button that will reset the database to have the video paused and the time stamp at 0
+// This will also reset the video player to have the video paused and the time stamp at 0
+const resetButton = document.getElementById('resetButton');
+resetButton.addEventListener('click', () => {
+  const playbackRef = ref(database, 'playback');
+  set(playbackRef, { playing: false, timestamp: 0 });
+  videoPlayer.pause();
+  videoPlayer.currentTime = 0;
+  console.log('Reset video and database');
+});
+
+// Make a sync from database button that will read the values currently in the database and set the video player to match
+const syncButton = document.getElementById('syncButton');
+syncButton.addEventListener('click', () => {
+  const playbackRef = ref(database, 'playback');
+  get(playbackRef).then((snapshot) => {
+    const data = snapshot.val();
+    if (data.playing) {
+      videoPlayer.play();
+    }
+    else {
+      videoPlayer.pause();
+    }
+    videoPlayer.currentTime = data.timestamp;
+    console.log('Synced video player with database');
+  });
+});
+
+// Make a set button that will set the database to have the current video player state
+const setButton = document.getElementById('setButton');
+setButton.addEventListener('click', () => {
+  const playbackRef = ref(database, 'playback');
+  set(playbackRef, { playing: !videoPlayer.paused, timestamp: videoPlayer.currentTime });
+  // set the sync variable to true
+  const syncRef = ref(database, 'sync');
+  set(syncRef, { sync: true });
+  console.log('Set database to match video player');
+});
+
+// Listen to changes in playback (play/pause)
+videoPlayer.addEventListener('play', () => {
+  const playbackRef = ref(database, 'playback');
+  set(playbackRef, { playing: true, timestamp: videoPlayer.currentTime});
+  console.log('Video is playing');
+});
+
+videoPlayer.addEventListener('pause', () => {
+  const playbackRef = ref(database, 'playback');
+  set(playbackRef, { playing: false, timestamp: videoPlayer.currentTime});
+  console.log('Video is paused');
+});
+
+// Initial call to update database content
+updateDatabaseContent();
